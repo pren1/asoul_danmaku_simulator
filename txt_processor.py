@@ -8,6 +8,8 @@ class txt_processor:
     def __init__(self, path_to_txt):
         self.path = path_to_txt
         self.txt_list = []
+        self.start_time_stamp = 0
+        self.is_first_time = True
 
     def read_target_txt(self):
         # Read in target txt into a string list
@@ -32,7 +34,9 @@ class txt_processor:
         new_list = []
         # Avoid bug
         current_time_stamp = 0
+        count = 0
         for single_string in self.txt_list:
+            count += 1
             if single_string[:4] == 'TIME':
                 current_time_stamp = self.Time_to_stamp_number(single_string)
             elif single_string[:10] == 'SPEAKERNUM':
@@ -44,24 +48,36 @@ class txt_processor:
                     continue
 
                 else:
-                    if len(sep) == 1:  # if time_stamp and UID are NOT RECORDED
-                        sep = ['0', '0'] + sep
-                    elif len(sep) == 2:  # if time_stamp is NOT RECORDED
-                        try:
-                            int(sep[0])
-                            sep = ['0'] + sep  # if sep[0] is numbers, UID is RECORDED
-                        except ValueError:
-                            sep = ['0', '0', single_string]  # otherwise, UID is NOT RECORDED
-                    else:
-                        try:
-                            int(sep[1])
-                        except ValueError:  # maybe time_stamp is NOT RECORDED
-                            try:
-                                int(sep[0])
-                                sep = ['0', sep[0], sep[1] + ':' + sep[2]]  # here sep[0] records UID
-                            except ValueError:  # time_stamp is NOT RECORDED
-                                sep = ['0', '0', single_string]
-                    new_list.append([current_time_stamp, sep[1], sep[2]])
+                    'assume that everything goes well'
+                    # if len(sep) == 1:  # if time_stamp and UID are NOT RECORDED
+                    #     sep = ['0', '0'] + sep
+                    # elif len(sep) == 2:  # if time_stamp is NOT RECORDED
+                    #     try:
+                    #         int(sep[0])
+                    #         sep = ['0'] + sep  # if sep[0] is numbers, UID is RECORDED
+                    #     except ValueError:
+                    #         sep = ['0', '0', single_string]  # otherwise, UID is NOT RECORDED
+                    # else:
+                    #     try:
+                    #         int(sep[1])
+                    #     except ValueError:  # maybe time_stamp is NOT RECORDED
+                    #         try:
+                    #             int(sep[0])
+                    #             sep = ['0', sep[0], sep[1] + ':' + sep[2]]  # here sep[0] records UID
+                    #         except ValueError:  # time_stamp is NOT RECORDED
+                    #             sep = ['0', '0', single_string]
+                    try:
+                        if self.is_first_time:
+                            self.is_first_time = False
+                            self.start_time_stamp = int(sep[0])
+                        if len(sep) == 3 and len(sep) > 0:
+                            new_list.append([int((int(sep[0]) - self.start_time_stamp)/1000), sep[1], sep[2]])
+                    except ValueError:
+                        print(self.path)
+                        print(count)
+                        # pdb.set_trace()
+                        continue
+
         return new_list
 
     def Time_to_stamp_number(self, time_string):
