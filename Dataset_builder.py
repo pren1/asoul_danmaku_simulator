@@ -14,9 +14,9 @@ class Dataset_builder(object):
         for single_file_path in tqdm(self.all_file_paths):
             'first check the file size'
             filesize = os.path.getsize(single_file_path)/(1024)
-            # if filesize < 500:
-            #     'cut size samller than 500 kb'
-            #     continue
+            if filesize < 500:
+                'cut size samller than 500 kb'
+                continue
             processor = txt_processor(single_file_path)
             candidate_danmakus = processor.read_target_txt()
             if len(candidate_danmakus) > 0:
@@ -59,6 +59,6 @@ class Dataset_builder(object):
             os.mkdir(path)
 
 if __name__ == '__main__':
-    input_path = "/Users/renpeng/Downloads/ASOUL_dataset/"
+    input_path = "./ASOUL_dataset/"
     dataset_builder = Dataset_builder(input_path)
     dataset_builder.handle_data()
