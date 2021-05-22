@@ -28,10 +28,10 @@ class File_scan:
 				res_files.append(target_path)
 		return res_files
 
-	def path_gen(self):
+	def path_gen(self, extension='.txt'):
 		First_level_folders = self.folder_names_in_directory()
 		File_path_list = []
 		for folder_path in First_level_folders:
-			File_lists_under_folder = self.files_in_target_folder(folder_path)
+			File_lists_under_folder = self.files_in_target_folder(folder_path, extension)
 			File_path_list.extend(File_lists_under_folder)
 		return File_path_list
