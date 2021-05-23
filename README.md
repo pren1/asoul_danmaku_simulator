@@ -8,10 +8,13 @@ git clone https://github.com/pren1/asoul_danmaku_simulator
 ```
 
 2. 下载相关数据库 ASOUL_dataset
+
 [下载链接](https://share.weiyun.com/19JjQ7JY)
+
 database数据库来源于[这里](https://github.com/dd-center/bilibili-vtuber-danmaku/). 其中包含了ASOUL直播间以及五位成员直播间的截止5月22日的过往弹幕。
 
 3. 数据预处理
+
 从ASOUL_dataset提取弹幕&发送时间, 运行以下脚本会生成databse文件夹。
 ```
 python3 Dataset_builder.py
@@ -23,13 +26,16 @@ python3 Dataset_builder.py
 python3 Dataset_processor.py
 ```
 4. 训练K-mean
+
 利用一个步长为100条弹幕，宽为200条弹幕的窗口切割各场直播间弹幕。所得结果利用tf-idf+k_mean训练。k_mean的最佳class数目为多次实验得到。
 ```
 python3 Cluster_trainer.py
 ```
 
 🎉 输出结果
+
 k-mean类数选择为27，以下是各个分类频率前十的弹幕。数字代表出现数目：
+
 ```json5
 {0: [('坏女人', 29518),
      ('好女人', 16818),
