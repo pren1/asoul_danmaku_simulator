@@ -3,7 +3,6 @@
 import pdb
 import numpy as np
 
-
 class txt_processor:
     def __init__(self, path_to_txt):
         self.path = path_to_txt

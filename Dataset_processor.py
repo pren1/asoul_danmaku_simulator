@@ -1,17 +1,10 @@
 import pandas as pd
-import numpy as np
-import pdb
 import os
 from File_scan import File_scan
 import jieba
 from tqdm import tqdm
 import concurrent.futures
-from sklearn.feature_extraction.text import TfidfVectorizer
 import re
-from sklearn.cluster import KMeans
-from sklearn.cluster import MeanShift
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import FunctionTransformer
 
 'Cut data using jieba'
 class process_dataset(object):
