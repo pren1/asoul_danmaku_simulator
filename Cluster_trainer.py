@@ -14,6 +14,8 @@ from wordcloud import WordCloud, STOPWORDS, ImageColorGenerator
 from PIL import Image
 import matplotlib.pyplot as plt
 import pickle
+from collections import Counter
+from pprint import pprint
 
 class Cluster_trainer(object):
     def __init__(self, path = "./Cleaned_database/"):
@@ -22,6 +24,7 @@ class Cluster_trainer(object):
         self.stride_size = 50
         self.window_size = 200
         self.time_interval_thres = 100
+        self.stop_list = ['了','吧','的','啊','吗']
 
     def Model_trainer(self):
         print("Loading data")
@@ -37,12 +40,12 @@ class Cluster_trainer(object):
 
         'Tf-idf'
         print("processing 'Tf-idf'")
-        tfidf_model = TfidfVectorizer(token_pattern=r"(?u)\b\w+\b", max_features=10000).fit(all_documents)
+        tfidf_model = TfidfVectorizer(token_pattern=r"(?u)\b\w+\b", max_features=3000, stop_words=self.stop_list).fit(all_documents)
         sparse_result = tfidf_model.transform(all_documents)
         'Kmean'
         print("processing Kmean")
 
-        K = [60]
+        K = [38]
         variances = []
         # silhouette_coefficients = []
         for i in tqdm(K):
@@ -63,7 +66,14 @@ class Cluster_trainer(object):
         # plt.xlabel("K Value")
         # plt.show()
 
+    def save_model(self, model):
+        pickle.dump(model, open("kmean_model.pkl", "wb"))
+
+    def load_model(self):
+        return pickle.load(open("kmean_model.pkl", "rb"))
+
     def process_single_data(self, single_file_path):
+        'prepare training data'
         df = pd.read_pickle(single_file_path)
         df = df[df['message'].map(len) > 0]
         df.index = range(len(df))
@@ -80,6 +90,7 @@ class Cluster_trainer(object):
         return document
 
     def load_corresponding_data(self, single_file_path):
+        'prepare testing data and original data'
         original_file_path = f"./database/{single_file_path.split('/')[2]}/{single_file_path.split('/')[3][:-4]}.csv"
         original_df = pd.read_csv(original_file_path)
         cleaned_df = pd.read_pickle(single_file_path)
@@ -100,12 +111,6 @@ class Cluster_trainer(object):
                 document.append(message_list)
         return document
 
-    def save_model(self, model):
-        pickle.dump(model, open("kmean_model.pkl", "wb"))
-
-    def load_model(self):
-        return pickle.load(open("kmean_model.pkl", "rb"))
-
     def get_danmaku_from_all_classes(self):
         print("Loading original data")
         if not os.path.isfile("original_documents.npy"):
@@ -116,17 +121,40 @@ class Cluster_trainer(object):
         else:
             original_documents = np.load("original_documents.npy")
 
+        assert os.path.isfile('all_danmaku.npy'), "file not exist"
+        all_documents = np.load("all_danmaku.npy")
+
+        assert len(all_documents) == len(original_documents), "Something wrong here"
+
         model_label = self.load_model().labels_
         assert len(model_label) == len(original_documents),"Fatal error"
         global_dict = {}
+        split_dict = {}
         print("merging danmaku from different labels")
         for index in tqdm(range(len(model_label))):
             if model_label[index] not in global_dict:
                 global_dict[model_label[index]] = []
+                split_dict[model_label[index]] = []
             global_dict[model_label[index]].extend(original_documents[index])
+            split_dict[model_label[index]].extend(all_documents[index].split(' '))
 
-        'remove duplicates for simplicity'
+        res_dict = {}
+        'max freq'
+        for sig in global_dict:
+            res_dict[sig] = self.find_top_n_common(global_dict[sig])
+
+        pprint(res_dict)
         pdb.set_trace()
+
+    def find_top_n_common(self, input_list):
+        dict = {}
+        for sig in tqdm(input_list):
+            if sig not in dict:
+                dict[sig] = 1
+            else:
+                dict[sig] += 1
+        sort_dict = sorted(dict.items(), key=lambda x: x[1], reverse=True)
+        return sort_dict[:10]
 
     # def word_cloud(self, all_documents):
     #     long_string = " ".join(all_documents)
@@ -152,5 +180,5 @@ class Cluster_trainer(object):
 
 if __name__ == '__main__':
     CT = Cluster_trainer()
-    # CT.Model_trainer()
+    CT.Model_trainer()
     CT.get_danmaku_from_all_classes()

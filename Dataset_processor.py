@@ -13,13 +13,11 @@ from sklearn.cluster import MeanShift
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import FunctionTransformer
 
+'Cut data using jieba'
 class process_dataset(object):
     def __init__(self, path = "./database/"):
         file_scan = File_scan(path)
         self.all_file_paths = file_scan.path_gen(extension='.csv')
-        self.stride_size = 50
-        self.window_size = 200
-        self.time_interval_thres = 100
 
     def process_all(self):
         executor = concurrent.futures.ProcessPoolExecutor(62)
@@ -39,27 +37,6 @@ class process_dataset(object):
 
         df.to_pickle(f"Cleaned_database/{roomid}/{file_name}.pkl")
         return
-        df = pd.read_pickle(f"Cleaned_database/{roomid}/{file_name}.pkl")
-        pdb.set_trace()
-        document = []
-        for i in range(0, len(df)-self.window_size, self.stride_size):
-            data_slice = df.loc[i:i+self.window_size-1]
-            assert len(data_slice) == self.window_size
-            time_interval = data_slice.loc[i+self.window_size-1][0] - data_slice.loc[i][0]
-            if time_interval <= self.time_interval_thres:
-                message_list = data_slice['message'].tolist()
-                sum_list = sum(message_list, [])
-                document.append(" ".join(sum_list))
-
-        tfidf_model = TfidfVectorizer(token_pattern=r"(?u)\b\w+\b").fit(document)
-        sparse_result = tfidf_model.transform(document)
-        # # 指定分成50个类
-        # for i in range(1, 50):
-        #     kmeans = KMeans(n_clusters=i, n_jobs=14)
-        #     kmeans.fit(sparse_result)
-        #     print("inertia: {}".format(kmeans.inertia_))
-        # pdb.set_trace()
-
 
     def split_string(self, input):
         remove_chars = '[·’!"\#$%&\'()＃！（）*+,-./:;<=>?\@，：?￥★、…．＞【】 ［］。《》？“”‘’\[\\]^_`{|}~]+'
