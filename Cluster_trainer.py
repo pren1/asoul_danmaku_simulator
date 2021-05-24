@@ -21,6 +21,15 @@ class Cluster_trainer(object):
     def Model_trainer(self):
         print("Loading data")
 
+        if not os.path.isfile("unjoint_all_danmaku.npy"):
+            unjoint_all_documents = []
+            for single_file_path in tqdm(self.all_file_paths):
+                unjoint_all_documents.extend(self.process_single_data(single_file_path, join_strings=False))
+
+            np.save("unjoint_all_danmaku", unjoint_all_documents)
+        else:
+            unjoint_all_documents = np.load("unjoint_all_danmaku.npy")
+
         if not os.path.isfile("all_danmaku.npy"):
             all_documents = []
             for single_file_path in tqdm(self.all_file_paths):
@@ -34,6 +43,8 @@ class Cluster_trainer(object):
         print("processing 'Tf-idf'")
         tfidf_model = TfidfVectorizer(token_pattern=r"(?u)\b\w+\b", max_features=6000, stop_words=self.stop_list).fit(all_documents)
         sparse_result = tfidf_model.transform(all_documents)
+
+        np.save("vocabulary", tfidf_model.vocabulary_)
         'Kmean'
         print("processing Kmean")
 
@@ -47,7 +58,7 @@ class Cluster_trainer(object):
     def load_model(self):
         return pickle.load(open("kmean_model.pkl", "rb"))
 
-    def process_single_data(self, single_file_path):
+    def process_single_data(self, single_file_path, join_strings = True):
         'prepare training data'
         df = pd.read_pickle(single_file_path)
         df = df[df['message'].map(len) > 0]
@@ -60,8 +71,12 @@ class Cluster_trainer(object):
             time_interval = data_slice.loc[i + self.window_size - 1][0] - data_slice.loc[i][0]
             if time_interval <= self.time_interval_thres:
                 message_list = data_slice['message'].tolist()
-                sum_list = sum(message_list, [])
-                document.append(" ".join(sum_list))
+                if join_strings:
+                    sum_list = sum(message_list, [])
+                    document.append(" ".join(sum_list))
+                else:
+                    sum_list = message_list
+                    document.append(sum_list)
         return document
 
     def load_corresponding_data(self, single_file_path):
@@ -98,6 +113,7 @@ class Cluster_trainer(object):
 
         assert os.path.isfile('all_danmaku.npy'), "file not exist"
         all_documents = np.load("all_danmaku.npy")
+        unjoint_all_documents = np.load("unjoint_all_danmaku.npy", allow_pickle=True)
 
         assert len(all_documents) == len(original_documents), "Something wrong here"
 
@@ -105,13 +121,27 @@ class Cluster_trainer(object):
         assert len(model_label) == len(original_documents),"Fatal error"
         global_dict = {}
         split_dict = {}
+        unjoint_split_dict = {}
+
         print("merging danmaku from different labels")
         for index in tqdm(range(len(model_label))):
             if model_label[index] not in global_dict:
                 global_dict[model_label[index]] = []
                 split_dict[model_label[index]] = []
+                unjoint_split_dict[model_label[index]] = []
+
             global_dict[model_label[index]].extend(original_documents[index])
             split_dict[model_label[index]].extend(all_documents[index].split(' '))
+            unjoint_split_dict[model_label[index]].extend(unjoint_all_documents[index])
+
+        with open('unjoint_split_dict.pickle', 'wb') as handle:
+            pickle.dump(unjoint_split_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+        with open('global_dict.pickle', 'wb') as handle:
+            pickle.dump(global_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+        with open('split_dict.pickle', 'wb') as handle:
+            pickle.dump(split_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
         res_dict = {}
         'max freq'
@@ -119,7 +149,6 @@ class Cluster_trainer(object):
             res_dict[sig] = self.find_top_n_common(global_dict[sig])
 
         pprint(res_dict)
-        pdb.set_trace()
 
     def find_top_n_common(self, input_list):
         dict = {}
@@ -133,5 +162,5 @@ class Cluster_trainer(object):
 
 if __name__ == '__main__':
     CT = Cluster_trainer()
-    CT.Model_trainer()
+    # CT.Model_trainer()
     CT.get_danmaku_from_all_classes()
