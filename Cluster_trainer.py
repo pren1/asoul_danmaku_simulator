@@ -21,6 +21,19 @@ class Cluster_trainer(object):
     def Model_trainer(self):
         print("Loading data")
 
+        quick_ori = []
+        quick_spl = []
+
+        for single_file_path in tqdm(self.all_file_paths):
+            ori, spl = self.quick_sol(single_file_path)
+            quick_ori.extend(ori)
+            quick_spl.extend(spl)
+
+        np.save("quick_ori", quick_ori)
+        np.save("quick_spl", quick_spl)
+        pdb.set_trace()
+
+
         if not os.path.isfile("unjoint_all_danmaku.npy"):
             unjoint_all_documents = []
             for single_file_path in tqdm(self.all_file_paths):
@@ -57,6 +70,19 @@ class Cluster_trainer(object):
 
     def load_model(self):
         return pickle.load(open("kmean_model.pkl", "rb"))
+
+    def quick_sol(self, single_file_path):
+        original_file_path = f"./database/{single_file_path.split('/')[2]}/{single_file_path.split('/')[3][:-4]}.csv"
+        original_df = pd.read_csv(original_file_path)
+        cleaned_df = pd.read_pickle(single_file_path)
+        index = cleaned_df['message'].map(len) > 0
+
+        original_df = original_df[index]
+        cleaned_df = cleaned_df[index]
+
+        assert len(original_df) == len(cleaned_df)
+        return original_df['message'].tolist(), cleaned_df['message'].tolist()
+
 
     def process_single_data(self, single_file_path, join_strings = True):
         'prepare training data'
@@ -114,7 +140,6 @@ class Cluster_trainer(object):
         assert os.path.isfile('all_danmaku.npy'), "file not exist"
         all_documents = np.load("all_danmaku.npy")
         unjoint_all_documents = np.load("unjoint_all_danmaku.npy", allow_pickle=True)
-
         assert len(all_documents) == len(original_documents), "Something wrong here"
 
         model_label = self.load_model().labels_
@@ -162,5 +187,5 @@ class Cluster_trainer(object):
 
 if __name__ == '__main__':
     CT = Cluster_trainer()
-    # CT.Model_trainer()
+    CT.Model_trainer()
     CT.get_danmaku_from_all_classes()

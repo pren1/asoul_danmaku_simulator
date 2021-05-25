@@ -53,6 +53,27 @@ class Bayes_classifier_trainer(object):
         # pdb.set_trace()
 
 if __name__ == '__main__':
-    BC = Bayes_classifier_trainer()
-    # BC.calculate_prior_freq()
-    BC.calculate_conditional_freq()
+    # BC = Bayes_classifier_trainer()
+    # # BC.calculate_prior_freq()
+    # BC.calculate_conditional_freq()
+
+    current_dict = {}
+    content = np.load("quick_spl.npy", allow_pickle=True)
+    for sig in tqdm(content):
+        val = "".join(sig)
+        if val not in current_dict:
+            current_dict[val] = 1
+        else:
+            current_dict[val] += 1
+
+    sorted_value = {k: v for k, v in sorted(current_dict.items(), key=lambda item: item[1])}
+    sorted_keys = list(sorted_value.keys())
+    pdb.set_trace()
+    sum_val = sum(current_dict.values())
+    current_dict = {k: (v + 1) / (total + 2) for total in (sum(current_dict.values()),) for k, v in
+                    current_dict.items()}
+    current_dict['Lap_smooth'] = 1 / sum_val
+    self.conditional_dict_list.append(current_dict)
+
+    with open('conditional_dict_list.pickle', 'wb') as handle:
+        pickle.dump(self.conditional_dict_list, handle, protocol=pickle.HIGHEST_PROTOCOL)
