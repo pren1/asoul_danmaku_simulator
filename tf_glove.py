@@ -197,6 +197,9 @@ class GloVeModel():
         labels = self.words[:word_count]
         return _plot_with_labels(low_dim_embs, labels, path, size)
 
+    def get_word_to_id(self):
+        return self.__word_to_id
+
 
 def _context_windows(region, left_size, right_size):
     for i, word in enumerate(region):

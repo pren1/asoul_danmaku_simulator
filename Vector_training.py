@@ -28,9 +28,15 @@ if __name__ == '__main__':
     model = tf_glove.GloVeModel(embedding_size=embedding_size, context_size=500, min_occurrences=2000,
                                 learning_rate=0.05, batch_size=4096)
     model.fit_to_corpus(all_documents)
-    model.train(num_epochs=200)
+    model.train(num_epochs=400)
     print('finish training, took', time.time() - start_time, 's')
     vocab = model.words
+
+    corresponding_dict = model.get_word_to_id()
+
+    with open('corresponding_dict.pickle', 'wb') as handle:
+        pickle.dump(corresponding_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
     embeddings = model.embeddings
     print('vocab size', len(vocab))
     print('embedding shape', embeddings.shape)
