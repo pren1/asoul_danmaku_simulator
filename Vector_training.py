@@ -7,6 +7,7 @@ import tf_glove
 import numpy as np
 import time
 
+
 def process_single_data(single_file_path):
     'prepare training data'
     df = pd.read_pickle(single_file_path)
